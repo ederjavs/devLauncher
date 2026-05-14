@@ -19,7 +19,7 @@ public struct MeetingItemView: View {
     
     public var body: some View {
         Button(action: onAction) {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ZStack {
                     Circle()
                         .fill(
@@ -28,46 +28,45 @@ public struct MeetingItemView: View {
                                 startPoint: .topLeading, endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 48, height: 48)
-                        .shadow(color: platformColor.opacity(isHovered ? 0.4 : 0.22),
-                                radius: isHovered ? 10 : 5,
-                                y: isHovered ? 5 : 2.5)
+                        .frame(width: 38, height: 38)
+                        .shadow(color: platformColor.opacity(isHovered ? 0.35 : 0.18),
+                                radius: isHovered ? 8 : 4,
+                                y: isHovered ? 4 : 2)
                     
                     Circle()
-                        .stroke(Color.white.opacity(0.22), lineWidth: 0.9)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
+                        .frame(width: 38, height: 38)
                     
                     Image(systemName: meeting.platform.systemIconName)
-                        .font(.system(size: 20, weight: .heavy))
+                        .font(.system(size: 16, weight: .heavy))
                         .foregroundColor(.white)
-                        .shadow(color: Color.black.opacity(0.2), radius: 2)
+                        .shadow(color: Color.black.opacity(0.2), radius: 1.5)
                 }
                 
                 Text(meeting.name)
-                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
                     .lineLimit(1)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white)
-                    .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    .shadow(color: Color.black.opacity(0.5), radius: 1.5, x: 0, y: 1)
             }
-            .frame(width: 76, height: 82)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 4)
+            .frame(width: 68, height: 66)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
             .background(
                 Circle()
                     .fill(platformColor.opacity(isHovered ? 0.1 : 0))
-                    .frame(width: 72, height: 72)
-                    .blur(radius: 6)
-                    .scaleEffect(isHovered ? 1.12 : 0.92)
-                    .animation(.easeOut(duration: 0.2), value: isHovered)
+                    .frame(width: 56, height: 56)
+                    .blur(radius: 5)
+                    .scaleEffect(isHovered ? 1.1 : 0.9)
+                    .animation(.easeOut(duration: 0.18), value: isHovered)
             )
             .scaleEffect(isHovered ? 1.06 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.68), value: isHovered)
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .help("Join Meeting: \(meeting.name)")
+        .onHover { hovering in isHovered = hovering }
+        .help("Join: \(meeting.name)")
         .contextMenu {
             Button(action: onAction) {
                 Label("Join Now", systemImage: "video.fill")

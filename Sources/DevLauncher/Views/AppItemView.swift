@@ -32,9 +32,9 @@ public struct AppItemView: View {
                     .foregroundColor(.white)
                     .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 1)
             }
-            .frame(width: 76, height: 82)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 4)
+            .frame(width: 76, height: 78)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
             .background(
                 Circle()
                     .fill(Color.white.opacity(isHovered ? 0.09 : 0))

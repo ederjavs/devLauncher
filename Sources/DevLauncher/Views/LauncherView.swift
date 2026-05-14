@@ -30,12 +30,12 @@ public struct LauncherView: View {
                         searchBar
                         Spacer()
                     }
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
+                    .padding(.top, 14)
+                    .padding(.bottom, 6)
                     
                     // 2. El Grid Amplio de Apps (Scrolleable)
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 30) {
+                        VStack(spacing: 18) {
                             CategorizedAppsView(
                                 viewModel: viewModel,
                                 onAddAppToCategory: { category in
@@ -68,9 +68,9 @@ public struct LauncherView: View {
                                 }
                             )
                         }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 10)
-                        .contentShape(Rectangle()) // Asegura que toda el área capture el Scroll de ratón
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 6)
+                        .contentShape(Rectangle())
                     }
                     
                     // 3. Footer Estilo Vidrio

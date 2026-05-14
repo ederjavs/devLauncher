@@ -9,7 +9,7 @@ public struct MeetingsListView: View {
     
     // La misma rejilla simétrica que usamos para Apps para máxima armonía
     private let columns = [
-        GridItem(.adaptive(minimum: 76, maximum: 88), spacing: 20) // Reducido proporcionalmente
+        GridItem(.adaptive(minimum: 64, maximum: 76), spacing: 14)
     ]
     
     public init(viewModel: LauncherViewModel, onAddPressed: @escaping () -> Void, onEditPressed: @escaping (MeetingLink) -> Void) {

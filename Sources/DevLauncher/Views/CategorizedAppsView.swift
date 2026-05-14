@@ -15,7 +15,7 @@ public struct CategorizedAppsView: View {
     }
     
     public var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 16) {
             // Sección de cabecera "APPLICATIONS" eliminada para ganar altura vertical masiva
             
             ForEach(viewModel.categories) { category in
@@ -23,7 +23,7 @@ public struct CategorizedAppsView: View {
                 let isHovered = hoveredCategoryIds.contains(category.id)
                 
                 if filteredAppsCount > 0 || viewModel.searchText.isEmpty {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 10) {
                         
                         // Cabecera de la Categoría con Hover Robusto
                         HStack(spacing: 8) {
