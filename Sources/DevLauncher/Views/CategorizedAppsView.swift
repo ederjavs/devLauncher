@@ -5,8 +5,6 @@ public struct CategorizedAppsView: View {
     let onAddAppToCategory: (AppCategory) -> Void
     let onEditCategories: () -> Void
     
-    @State private var hoveredCategoryId: UUID? = nil
-    
     public init(viewModel: LauncherViewModel, onAddAppToCategory: @escaping (AppCategory) -> Void, onEditCategories: @escaping () -> Void) {
         self.viewModel = viewModel
         self.onAddAppToCategory = onAddAppToCategory
@@ -43,7 +41,7 @@ public struct CategorizedAppsView: View {
                 
                 if filteredAppsCount > 0 || viewModel.searchText.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
-                        // Cabecera de la Categoría Interactiva (Aparece el botón "+" al pasar el mouse)
+                        // Cabecera de la Categoría limpia y funcional
                         HStack(spacing: 8) {
                             Image(systemName: category.iconName)
                                 .font(.system(size: 13, weight: .bold))
@@ -54,39 +52,23 @@ public struct CategorizedAppsView: View {
                                 .foregroundColor(.white.opacity(0.95))
                                 .shadow(color: Color.black.opacity(0.3), radius: 2, y: 1)
                             
-                            // Botón "+" Sutil que se revela al Hover para no distraer
-                            if hoveredCategoryId == category.id {
-                                Button(action: { onAddAppToCategory(category) }) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.system(size: 13))
-                                        Text("Add App")
-                                            .font(.system(size: 10.5, weight: .bold))
-                                    }
-                                    .foregroundColor(.cyan)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(Capsule().fill(Color.cyan.opacity(0.15)))
-                                }
-                                .buttonStyle(.plain)
-                                .transition(.opacity.combined(with: .move(edge: .leading)))
+                            // Botón "+" Elegante, Pequeño y SIEMPRE accesible para evitar fallos de cursor
+                            Button(action: { onAddAppToCategory(category) }) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 10, weight: .heavy))
+                                    .foregroundColor(.cyan.opacity(0.85))
+                                    .frame(width: 18, height: 18)
+                                    .background(Circle().fill(Color.cyan.opacity(0.18)))
                             }
+                            .buttonStyle(.plain)
+                            .padding(.leading, 4)
+                            .help("Add app to \(category.name)")
                             
                             Spacer()
                         }
                         .padding(.horizontal, 28)
-                        .contentShape(Rectangle()) // Asegura captar el hover en toda el área
-                        .onHover { isHovering in
-                            withAnimation(.easeInOut(duration: 0.15)) {
-                                if isHovering {
-                                    hoveredCategoryId = category.id
-                                } else if hoveredCategoryId == category.id {
-                                    hoveredCategoryId = nil
-                                }
-                            }
-                        }
                         
-                        // Grid adaptativo limpio sin botones distractores
+                        // Grid adaptativo sin botones distractores
                         AppsGridView(viewModel: viewModel, categoryId: category.id) {
                             onAddAppToCategory(category)
                         }

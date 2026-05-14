@@ -10,8 +10,6 @@ public struct MeetingsListView: View {
         GridItem(.adaptive(minimum: 88, maximum: 96), spacing: 24)
     ]
     
-    @State private var isHeaderHovered = false
-    
     public init(viewModel: LauncherViewModel, onAddPressed: @escaping () -> Void, onEditPressed: @escaping (MeetingLink) -> Void) {
         self.viewModel = viewModel
         self.onAddPressed = onAddPressed
@@ -20,39 +18,28 @@ public struct MeetingsListView: View {
     
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Cabecera de Meetings interactiva
+            // Cabecera de Meetings limpia e interactiva
             HStack(spacing: 8) {
                 Label("MEETING ROOMS", systemImage: "video.circle.fill")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .tracking(1.2)
                     .foregroundColor(.white.opacity(0.5))
                 
-                if isHeaderHovered {
-                    Button(action: onAddPressed) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 13))
-                            Text("New Meeting")
-                                .font(.system(size: 10.5, weight: .bold))
-                        }
-                        .foregroundColor(.green)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(Color.green.opacity(0.15)))
-                    }
-                    .buttonStyle(.plain)
-                    .transition(.opacity.combined(with: .move(edge: .leading)))
+                // Botón "+" Fijo de alta legibilidad
+                Button(action: onAddPressed) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 10, weight: .heavy))
+                        .foregroundColor(.green.opacity(0.85))
+                        .frame(width: 18, height: 18)
+                        .background(Circle().fill(Color.green.opacity(0.18)))
                 }
+                .buttonStyle(.plain)
+                .padding(.leading, 4)
+                .help("Add a new meeting link")
                 
                 Spacer()
             }
             .padding(.horizontal, 26)
-            .contentShape(Rectangle())
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isHeaderHovered = hovering
-                }
-            }
             
             let meetings = viewModel.filteredMeetings
             

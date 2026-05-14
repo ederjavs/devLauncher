@@ -70,6 +70,7 @@ public struct LauncherView: View {
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 10)
+                        .contentShape(Rectangle()) // Asegura que toda el área capture el Scroll de ratón
                     }
                     
                     // 3. Footer Estilo Vidrio
@@ -79,30 +80,27 @@ public struct LauncherView: View {
             }
         }
         .frame(width: 750, height: 520)
-        // Fondo Launchpad Oficial: Material Nativo de SwiftUI que NO sangra esquinas
-        // Con una base negra sólida del 78% para evitar el efecto descolorido
-        .background(.ultraThickMaterial)
-        .background(Color.black.opacity(0.78))
-        .overlay(
-            // Brillo de cristal ambiental sutil
-            LinearGradient(
-                colors: [.white.opacity(0.06), .clear, .black.opacity(0.15)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
+        // --- SOLUCIÓN ESQUINAS Y CONTRASTE DEFINITIVA ---
+        // Usamos NSVisualEffectView optimizado con QuartzCore (con esquinas redondeadas reales)
+        // Y le metemos un overlay del 82% de negro para mantener el contraste sólido tipo Noir
+        .background(
+            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: 28)
+                .overlay(Color.black.opacity(0.82))
         )
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(
-            // Borde brillante 3D de cristal (Bevel)
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [.white.opacity(0.25), .white.opacity(0.04), .black.opacity(0.3)],
+                        colors: [.white.opacity(0.25), .white.opacity(0.05), .black.opacity(0.35)],
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     ),
                     lineWidth: 1.2
                 )
         )
-        .shadow(color: Color.black.opacity(0.55), radius: 35, y: 18)
+        .shadow(color: Color.black.opacity(0.5), radius: 35, y: 18)
+        // Fuerza modo oscuro siempre para evitar que se vea blanquizco en Light Mode del Mac
+        .preferredColorScheme(.dark) 
         .onAppear {
             withAnimation(.genieAnimation()) {
                 isAppeared = true
@@ -112,19 +110,17 @@ public struct LauncherView: View {
             isAppeared = false
             viewModel.searchText = ""
         }
-        // --- SISTEMA DE MODALES INTEGRADO EN CRISTAL (ZStack Custom Sheets) ---
+        // --- SISTEMA DE MODALES INTEGRADO ---
         .overlay(
             ZStack {
                 if let sheet = activeSheet {
-                    // Fondo oscuro difuminador interactivo
-                    Color.black.opacity(0.55)
+                    Color.black.opacity(0.65)
                         .edgesIgnoringSafeArea(.all)
                         .onTapGesture {
                             activeSheet = nil
                         }
                         .transition(.opacity)
                     
-                    // Contenedor del Modal
                     Group {
                         switch sheet {
                         case .addApp:
@@ -143,21 +139,23 @@ public struct LauncherView: View {
                             SettingsView { activeSheet = nil }
                         }
                     }
-                    // Diseño del Modal con Material Nativo para esquinas perfectas
-                    .background(.ultraThickMaterial)
-                    .background(Color.black.opacity(0.4))
+                    .background(
+                        VisualEffectView(material: .popover, blendingMode: .withinWindow, cornerRadius: 22)
+                            .overlay(Color.black.opacity(0.4))
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .stroke(Color.white.opacity(0.25), lineWidth: 1.2)
                     )
-                    .shadow(color: Color.black.opacity(0.6), radius: 30, y: 15)
+                    .shadow(color: Color.black.opacity(0.65), radius: 30, y: 15)
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
                 }
             }
+            // ¡¡CRÍTICO!! allowsHitTesting previene que esta capa bloquee el ScrollView cuando está vacía
+            .allowsHitTesting(activeSheet != nil) 
             .animation(.spring(response: 0.32, dampingFraction: 0.76), value: activeSheet != nil)
             .onExitCommand {
-                // Captura la tecla 'Escape' física para cerrar el modal activo
                 if activeSheet != nil {
                     activeSheet = nil
                 }
@@ -171,7 +169,7 @@ public struct LauncherView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.white.opacity(0.4))
+                .foregroundColor(.white.opacity(0.5))
             
             TextField("Search", text: $viewModel.searchText)
                 .textFieldStyle(.plain)
@@ -181,20 +179,20 @@ public struct LauncherView: View {
             if !viewModel.searchText.isEmpty {
                 Button(action: { viewModel.searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
-        .frame(width: 280) // Ancho centrado tipo Launchpad
+        .frame(width: 280)
         .background(
-            Capsule() // Pill shape perfecto
-                .fill(Color.white.opacity(0.08))
+            Capsule()
+                .fill(Color.white.opacity(0.1))
                 .overlay(
                     Capsule()
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
                 )
         )
     }
@@ -216,31 +214,39 @@ public struct LauncherView: View {
                     Image(systemName: "power.circle.fill")
                 }
                 .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundColor(.red.opacity(0.75))
+                .foregroundColor(.red.opacity(0.85))
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 25)
         .padding(.vertical, 14)
-        .background(Color.black.opacity(0.1))
+        .background(Color.black.opacity(0.2))
     }
 }
 
-// Visual Effect View Nativo para el Vidrio Escarchado
+// MARK: - Visual Effect View Nativo y Refinado con Capas QuartzCore Reales
 struct VisualEffectView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
+    let cornerRadius: CGFloat // Añadido para redondeado a nivel de sistema
     
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
         view.blendingMode = blendingMode
         view.state = .active
+        
+        // Activar QuartzCore Layers para recortar esquinas físicamente y evitar sangrado rectangular
+        view.wantsLayer = true
+        view.layer?.cornerRadius = cornerRadius
+        view.layer?.masksToBounds = true
+        
         return view
     }
     
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
+        nsView.layer?.cornerRadius = cornerRadius
     }
 }
