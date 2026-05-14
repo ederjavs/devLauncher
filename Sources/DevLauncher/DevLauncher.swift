@@ -2,6 +2,11 @@ import SwiftUI
 import AppKit
 import KeyboardShortcuts
 
+// Notificación para comunicar cambios de tamaño desde SwiftUI al NSPopover
+extension Notification.Name {
+    static let popoverShouldResize = Notification.Name("popoverShouldResize")
+}
+
 @main
 struct DevLauncherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -18,7 +23,6 @@ struct DevLauncherApp: App {
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var popover: NSPopover?
-    var eventMonitor: Any?
     let viewModel = LauncherViewModel()
     
     public func applicationDidFinishLaunching(_ notification: Notification) {
@@ -27,6 +31,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupPopover()
         setupGlobalShortcut()
+        setupResizeObserver()
     }
     
     private func setupStatusItem() {
@@ -42,13 +47,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupPopover() {
         let pop = NSPopover()
-        pop.contentSize = NSSize(width: 750, height: 520)
+        pop.contentSize = NSSize(width: 750, height: 200) // Arranca compacto
         pop.behavior = .transient
         pop.animates = true
-        
-        // ── CORRECCIÓN FLECHA ──
-        // Aplicar apariencia oscura directamente al objeto NSPopover
-        // para que la flecha triangular herede el material dark glass y NO sea azul
         pop.appearance = NSAppearance(named: .vibrantDark)
         
         pop.contentViewController = PopoverHostingController(
@@ -56,6 +57,24 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         
         self.popover = pop
+    }
+    
+    /// Escucha notificaciones de LauncherView para redimensionar el popover dinámicamente
+    private func setupResizeObserver() {
+        NotificationCenter.default.addObserver(
+            forName: .popoverShouldResize,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let height = notification.userInfo?["height"] as? CGFloat else { return }
+            
+            let newSize = NSSize(width: 750, height: height)
+            // Solo redimensionar si el cambio es significativo (evita loops de layout)
+            if abs(self.popover?.contentSize.height ?? 0 - height) > 2 {
+                self.popover?.contentSize = newSize
+            }
+        }
     }
     
     private func setupGlobalShortcut() {
@@ -80,8 +99,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func showPopover() {
         guard let popover = popover, let button = statusItem?.button else { return }
-        
-        // Muestra el popover anclado al botón de la barra de menú con la flecha apuntando hacia arriba
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
         NSApp.activate(ignoringOtherApps: true)
@@ -90,20 +107,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
 // MARK: - Hosting Controller con Aspecto Liquid Glass
 
-/// Controlador personalizado que configura la apariencia oscura premium
-/// y permite que el popover de macOS aplique su fondo de cristal nativo con flecha
 class PopoverHostingController<Content: View>: NSHostingController<Content> {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Fuerza el modo oscuro dentro del popover para el look Noir premium
         view.appearance = NSAppearance(named: .vibrantDark)
     }
     
     override func viewWillAppear() {
         super.viewWillAppear()
-        
-        // Aplica el efecto de cristal oscuro a la ventana subyacente del popover
         if let popoverWindow = view.window {
             popoverWindow.appearance = NSAppearance(named: .vibrantDark)
         }

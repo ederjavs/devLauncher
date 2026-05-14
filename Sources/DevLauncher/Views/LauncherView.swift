@@ -1,5 +1,13 @@
 import SwiftUI
 
+// PreferenceKey para medir la altura real del contenido dentro del ScrollView
+private struct ContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 public struct LauncherView: View {
     @ObservedObject var viewModel: LauncherViewModel
     
@@ -10,6 +18,31 @@ public struct LauncherView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var categoryForNewApp: AppCategory?
     @State private var meetingToEdit: MeetingLink?
+    
+    // ── FOCO AUTOMÁTICO EN BÚSQUEDA ──
+    @FocusState private var isSearchFocused: Bool
+    
+    // ── ALTURA DINÁMICA ──
+    @State private var measuredContentHeight: CGFloat = 200
+    
+    // Constantes de layout
+    private let fixedWidth: CGFloat = 750
+    private let searchBarAreaHeight: CGFloat = 52   // searchBar + paddings
+    private let footerHeight: CGFloat = 42          // footer bar
+    private let minHeight: CGFloat = 180
+    
+    /// Máxima altura permitida: 80% de la pantalla disponible debajo del menú
+    private var maxHeight: CGFloat {
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
+        return min(screenHeight * 0.80, 720)
+    }
+    
+    /// Altura final: crece con contenido, pero nunca excede maxHeight
+    private var dynamicHeight: CGFloat {
+        let idealHeight = searchBarAreaHeight + measuredContentHeight + footerHeight
+        return min(max(idealHeight, minHeight), maxHeight)
+    }
+    
     
     enum ActiveSheet: Identifiable {
         case addApp, addMeeting, editMeeting, editCategories, settings
@@ -24,7 +57,7 @@ public struct LauncherView: View {
         ZStack {
             if isAppeared {
                 VStack(spacing: 0) {
-                    // 1. Buscador Flotante y Centrado (Estilo Launchpad)
+                    // 1. Buscador Flotante
                     HStack {
                         Spacer()
                         searchBar
@@ -33,62 +66,23 @@ public struct LauncherView: View {
                     .padding(.top, 14)
                     .padding(.bottom, 6)
                     
-                    // 2. El Grid Amplio de Apps (Scrolleable)
+                    // 2. Contenido Principal: ScrollView SIEMPRE presente
+                    // (No hace scroll si el contenido cabe — eso lo gestiona macOS nativamente)
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 18) {
-                            CategorizedAppsView(
-                                viewModel: viewModel,
-                                onAddAppToCategory: { category in
-                                    self.categoryForNewApp = category
-                                    self.activeSheet = .addApp
-                                },
-                                onEditCategories: {
-                                    self.activeSheet = .editCategories
-                                }
-                            )
-                            
-                            // Separador súper sutil estilo brillo líquido
-                            Rectangle()
-                                .fill(LinearGradient(
-                                    colors: [.clear, .white.opacity(0.1), .clear],
-                                    startPoint: .leading, endPoint: .trailing
-                                ))
-                                .frame(height: 1)
-                                .padding(.horizontal, 40)
-                            
-                            MeetingsListView(
-                                viewModel: viewModel,
-                                onAddPressed: {
-                                    self.meetingToEdit = nil
-                                    self.activeSheet = .addMeeting
-                                },
-                                onEditPressed: { meeting in
-                                    self.meetingToEdit = meeting
-                                    self.activeSheet = .editMeeting
-                                }
-                            )
-                        }
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 6)
-                        .contentShape(Rectangle())
+                        mainContent
                     }
                     
-                    // 3. Footer Estilo Vidrio
+                    // 3. Footer
                     footerBar
                 }
                 .transition(.genie)
             }
         }
-        .frame(width: 750, height: 520)
-        // El NSPopover gestiona su propio marco, flecha y glassmorphism.
-        // Solo necesitamos definir el fondo oscuro Noir encima del material del sistema
+        .frame(width: fixedWidth, height: dynamicHeight)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: 0)
-                .overlay(
-                    Color.black.opacity(0.80) // Noir oscuro para evitar efecto blanquizco
-                )
+                .overlay(Color.black.opacity(0.80))
         )
-        // Brillo de cristal ambiental muy sutil (edge highlight)
         .overlay(
             LinearGradient(
                 colors: [.white.opacity(0.05), .clear, .black.opacity(0.1)],
@@ -96,26 +90,35 @@ public struct LauncherView: View {
             )
             .allowsHitTesting(false)
         )
-        // Fuerza modo oscuro siempre para look premium consistente
         .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.genieAnimation()) {
                 isAppeared = true
+            }
+            // Foco automático en la barra de búsqueda tras la animación
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isSearchFocused = true
             }
         }
         .onDisappear {
             isAppeared = false
             viewModel.searchText = ""
         }
-        // --- SISTEMA DE MODALES INTEGRADO ---
+        // Notificar al NSPopover cada vez que cambie la altura
+        .onChange(of: dynamicHeight) { newHeight in
+            NotificationCenter.default.post(
+                name: .popoverShouldResize,
+                object: nil,
+                userInfo: ["height": newHeight]
+            )
+        }
+        // Modal overlay
         .overlay(
             ZStack {
                 if let sheet = activeSheet {
                     Color.black.opacity(0.65)
                         .edgesIgnoringSafeArea(.all)
-                        .onTapGesture {
-                            activeSheet = nil
-                        }
+                        .onTapGesture { activeSheet = nil }
                         .transition(.opacity)
                     
                     Group {
@@ -152,15 +155,67 @@ public struct LauncherView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
                 }
             }
-            // ¡¡CRÍTICO!! allowsHitTesting previene que esta capa bloquee el ScrollView cuando está vacía
-            .allowsHitTesting(activeSheet != nil) 
+            .allowsHitTesting(activeSheet != nil)
             .animation(.spring(response: 0.32, dampingFraction: 0.76), value: activeSheet != nil)
             .onExitCommand {
-                if activeSheet != nil {
-                    activeSheet = nil
-                }
+                if activeSheet != nil { activeSheet = nil }
             }
         )
+    }
+    
+    // MARK: - Main Content (medible)
+    
+    /// El contenido central que se mide para calcular la altura dinámica
+    private var mainContent: some View {
+        VStack(spacing: 18) {
+            CategorizedAppsView(
+                viewModel: viewModel,
+                onAddAppToCategory: { category in
+                    self.categoryForNewApp = category
+                    self.activeSheet = .addApp
+                },
+                onEditCategories: {
+                    self.activeSheet = .editCategories
+                }
+            )
+            
+            // Separador
+            Rectangle()
+                .fill(LinearGradient(
+                    colors: [.clear, .white.opacity(0.1), .clear],
+                    startPoint: .leading, endPoint: .trailing
+                ))
+                .frame(height: 1)
+                .padding(.horizontal, 40)
+            
+            MeetingsListView(
+                viewModel: viewModel,
+                onAddPressed: {
+                    self.meetingToEdit = nil
+                    self.activeSheet = .addMeeting
+                },
+                onEditPressed: { meeting in
+                    self.meetingToEdit = meeting
+                    self.activeSheet = .editMeeting
+                }
+            )
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 6)
+        .contentShape(Rectangle())
+        // ── MEDICIÓN DE CONTENIDO ──
+        // Un GeometryReader invisible lee la altura real del contenido
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .preference(key: ContentHeightKey.self, value: geo.size.height)
+            }
+        )
+        .onPreferenceChange(ContentHeightKey.self) { height in
+            if abs(measuredContentHeight - height) > 1 {
+                measuredContentHeight = height
+            }
+        }
     }
     
     // MARK: - Subviews
@@ -175,6 +230,7 @@ public struct LauncherView: View {
                 .textFieldStyle(.plain)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
+                .focused($isSearchFocused)
             
             if !viewModel.searchText.isEmpty {
                 Button(action: { viewModel.searchText = "" }) {
@@ -224,23 +280,20 @@ public struct LauncherView: View {
     }
 }
 
-// MARK: - Visual Effect View Nativo y Refinado con Capas QuartzCore Reales
+// MARK: - Visual Effect View
 struct VisualEffectView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
-    let cornerRadius: CGFloat // Añadido para redondeado a nivel de sistema
+    let cornerRadius: CGFloat
     
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
         view.blendingMode = blendingMode
         view.state = .active
-        
-        // Activar QuartzCore Layers para recortar esquinas físicamente y evitar sangrado rectangular
         view.wantsLayer = true
         view.layer?.cornerRadius = cornerRadius
         view.layer?.masksToBounds = true
-        
         return view
     }
     
