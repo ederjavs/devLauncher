@@ -80,27 +80,24 @@ public struct LauncherView: View {
             }
         }
         .frame(width: 750, height: 520)
-        // --- SOLUCIÓN ESQUINAS Y CONTRASTE DEFINITIVA ---
-        // Usamos NSVisualEffectView optimizado con QuartzCore (con esquinas redondeadas reales)
-        // Y le metemos un overlay del 82% de negro para mantener el contraste sólido tipo Noir
+        // El NSPopover gestiona su propio marco, flecha y glassmorphism.
+        // Solo necesitamos definir el fondo oscuro Noir encima del material del sistema
         .background(
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: 28)
-                .overlay(Color.black.opacity(0.82))
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.25), .white.opacity(0.05), .black.opacity(0.35)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.2
+            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: 0)
+                .overlay(
+                    Color.black.opacity(0.80) // Noir oscuro para evitar efecto blanquizco
                 )
         )
-        .shadow(color: Color.black.opacity(0.5), radius: 35, y: 18)
-        // Fuerza modo oscuro siempre para evitar que se vea blanquizco en Light Mode del Mac
-        .preferredColorScheme(.dark) 
+        // Brillo de cristal ambiental muy sutil (edge highlight)
+        .overlay(
+            LinearGradient(
+                colors: [.white.opacity(0.05), .clear, .black.opacity(0.1)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .allowsHitTesting(false)
+        )
+        // Fuerza modo oscuro siempre para look premium consistente
+        .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.genieAnimation()) {
                 isAppeared = true
@@ -136,7 +133,10 @@ public struct LauncherView: View {
                         case .editCategories:
                             CategorySettingsView(viewModel: viewModel) { activeSheet = nil }
                         case .settings:
-                            SettingsView { activeSheet = nil }
+                            SettingsView(
+                                onManageCategories: { activeSheet = .editCategories },
+                                onDismiss: { activeSheet = nil }
+                            )
                         }
                     }
                     .background(

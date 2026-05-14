@@ -5,9 +5,9 @@ public struct AppsGridView: View {
     let categoryId: UUID
     let onAddPressed: () -> Void
     
-    // Grid más amplio para dar un look aireado tipo Launchpad
+    // Grid optimizado para iconos 10px más pequeños, ganando ligereza proporcional
     private let columns = [
-        GridItem(.adaptive(minimum: 88, maximum: 96), spacing: 24)
+        GridItem(.adaptive(minimum: 76, maximum: 88), spacing: 20)
     ]
     
     public init(viewModel: LauncherViewModel, categoryId: UUID, onAddPressed: @escaping () -> Void) {
@@ -19,7 +19,7 @@ public struct AppsGridView: View {
     public var body: some View {
         let apps = viewModel.filteredApps(for: categoryId)
         
-        LazyVGrid(columns: columns, alignment: .leading, spacing: 24) {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
             ForEach(apps) { app in
                 AppItemView(
                     app: app,

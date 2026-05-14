@@ -13,26 +13,19 @@ struct DevLauncherApp: App {
     }
 }
 
-// MARK: - Subclase Personalizada de NSPanel para permitir el Foco del Teclado
-class FloatingPanel: NSPanel {
-    // Clave absoluta para que la barra de búsqueda y sheets puedan recibir escritura de teclado
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { true }
-}
-
 // MARK: - AppDelegate
 
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
-    var panel: FloatingPanel? // Actualizado a nuestra subclase
+    var popover: NSPopover?
+    var eventMonitor: Any?
     let viewModel = LauncherViewModel()
     
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        // Oculta ícono de Dock
         NSApp.setActivationPolicy(.accessory)
         
         setupStatusItem()
-        setupPanel()
+        setupPopover()
         setupGlobalShortcut()
     }
     
@@ -47,79 +40,69 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    private func setupPanel() {
-        // Usamos nuestra subclase FloatingPanel en lugar de NSPanel genérico
-        let windowPanel = FloatingPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 750, height: 520),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
+    private func setupPopover() {
+        let pop = NSPopover()
+        pop.contentSize = NSSize(width: 750, height: 520)
+        // .semitransparent da el efecto liquid glass nativo de macOS con la flechita
+        pop.behavior = .transient     // Se cierra solo al hacer clic fuera
+        pop.animates = true           // Animación de apertura nativa de Apple
+        
+        // Material que da el efecto glass/vitral con la flecha incluida
+        pop.contentViewController = PopoverHostingController(
+            rootView: LauncherView(viewModel: viewModel)
         )
         
-        windowPanel.isFloatingPanel = true
-        windowPanel.level = .floating
-        windowPanel.backgroundColor = .clear // Fondo base transparente
-        windowPanel.isOpaque = false         // Permite que los pixeles transparentes pasen
-        windowPanel.isMovable = false
-        windowPanel.hasShadow = false         // SwiftUI maneja su propia sombra premium
-        windowPanel.isReleasedWhenClosed = false
-        windowPanel.hidesOnDeactivate = true
-        
-        let rootView = LauncherView(viewModel: viewModel)
-        windowPanel.contentView = NSHostingView(rootView: rootView)
-        
-        self.panel = windowPanel
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(panelDidResignKey),
-            name: NSWindow.didResignKeyNotification,
-            object: windowPanel
-        )
+        self.popover = pop
     }
     
     private func setupGlobalShortcut() {
         KeyboardShortcuts.onKeyUp(for: .toggleLauncher) { [weak self] in
-            self?.togglePanel()
+            self?.togglePopover()
         }
     }
     
     @objc private func statusItemClicked() {
-        togglePanel()
+        togglePopover()
     }
     
-    @objc private func panelDidResignKey() {
-        hidePanel()
-    }
-    
-    public func togglePanel() {
-        guard let panel = panel else { return }
+    public func togglePopover() {
+        guard let popover = popover else { return }
         
-        if panel.isVisible {
-            hidePanel()
+        if popover.isShown {
+            popover.performClose(nil)
         } else {
-            showPanel()
+            showPopover()
         }
     }
     
-    private func showPanel() {
-        guard let panel = panel, let button = statusItem?.button else { return }
+    private func showPopover() {
+        guard let popover = popover, let button = statusItem?.button else { return }
         
-        if let window = button.window {
-            let buttonFrame = window.frame
-            let panelFrame = panel.frame
-            
-            let xPos = buttonFrame.origin.x + (buttonFrame.width / 2) - (panelFrame.width / 2)
-            let yPos = buttonFrame.origin.y - panelFrame.height - 6 // Separación premium de 6px
-            
-            panel.setFrameOrigin(NSPoint(x: xPos, y: yPos))
-        }
-        
-        panel.makeKeyAndOrderFront(nil)
+        // Muestra el popover anclado al botón de la barra de menú con la flecha apuntando hacia arriba
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
         NSApp.activate(ignoringOtherApps: true)
     }
+}
+
+// MARK: - Hosting Controller con Aspecto Liquid Glass
+
+/// Controlador personalizado que configura la apariencia oscura premium
+/// y permite que el popover de macOS aplique su fondo de cristal nativo con flecha
+class PopoverHostingController<Content: View>: NSHostingController<Content> {
     
-    private func hidePanel() {
-        panel?.orderOut(nil)
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Fuerza el modo oscuro dentro del popover para el look Noir premium
+        view.appearance = NSAppearance(named: .vibrantDark)
+    }
+    
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        
+        // Aplica el efecto de cristal oscuro a la ventana subyacente del popover
+        if let popoverWindow = view.window {
+            popoverWindow.appearance = NSAppearance(named: .vibrantDark)
+        }
     }
 }

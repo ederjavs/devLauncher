@@ -5,9 +5,11 @@ public struct MeetingsListView: View {
     let onAddPressed: () -> Void
     let onEditPressed: (MeetingLink) -> Void
     
+    @State private var isHeaderHovered = false
+    
     // La misma rejilla simétrica que usamos para Apps para máxima armonía
     private let columns = [
-        GridItem(.adaptive(minimum: 88, maximum: 96), spacing: 24)
+        GridItem(.adaptive(minimum: 76, maximum: 88), spacing: 20) // Reducido proporcionalmente
     ]
     
     public init(viewModel: LauncherViewModel, onAddPressed: @escaping () -> Void, onEditPressed: @escaping (MeetingLink) -> Void) {
@@ -18,14 +20,14 @@ public struct MeetingsListView: View {
     
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Cabecera de Meetings limpia e interactiva
+            // Cabecera de Meetings limpia e interactiva con HOVER ROBUSTO
             HStack(spacing: 8) {
                 Label("MEETING ROOMS", systemImage: "video.circle.fill")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .tracking(1.2)
                     .foregroundColor(.white.opacity(0.5))
                 
-                // Botón "+" Fijo de alta legibilidad
+                // Botón "+" animado por opacidad para evitar parpadeos y bugs táctiles
                 Button(action: onAddPressed) {
                     Image(systemName: "plus")
                         .font(.system(size: 10, weight: .heavy))
@@ -35,16 +37,23 @@ public struct MeetingsListView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, 4)
+                .opacity(isHeaderHovered ? 1 : 0)
+                .animation(.easeInOut(duration: 0.18), value: isHeaderHovered)
                 .help("Add a new meeting link")
                 
                 Spacer()
             }
             .padding(.horizontal, 26)
+            .contentShape(Rectangle()) // Captura la línea completa de hover
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isHeaderHovered = hovering
+                }
+            }
             
             let meetings = viewModel.filteredMeetings
             
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 24) {
-                // Renderizamos los iconos de Meetings únicamente
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
                 ForEach(meetings) { meeting in
                     MeetingItemView(
                         meeting: meeting,

@@ -2,9 +2,11 @@ import SwiftUI
 import KeyboardShortcuts
 
 public struct SettingsView: View {
+    let onManageCategories: () -> Void
     let onDismiss: () -> Void
     
-    public init(onDismiss: @escaping () -> Void) {
+    public init(onManageCategories: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+        self.onManageCategories = onManageCategories
         self.onDismiss = onDismiss
     }
     
@@ -24,6 +26,36 @@ public struct SettingsView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // Sección Gestión de Categorías (Movido aquí para ganar espacio)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Categorías y Grupos", systemImage: "folder.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.secondary)
+                        
+                        Text("Organiza, renombra o añade nuevas categorías de aplicaciones en tu Launchpad.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .padding(.bottom, 4)
+                        
+                        Button(action: {
+                            onDismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                onManageCategories()
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "slider.horizontal.3")
+                                Text("Gestionar Categorías")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    
+                    Divider()
+                    
                     // Sección Atajo Global
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Acceso Directo", systemImage: "keyboard")
@@ -41,7 +73,6 @@ public struct SettingsView: View {
                             
                             Spacer()
                             
-                            // El Grabador Nativo de la librería
                             KeyboardShortcuts.Recorder(for: .toggleLauncher)
                         }
                         .padding(12)

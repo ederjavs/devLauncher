@@ -19,10 +19,8 @@ public struct MeetingItemView: View {
     
     public var body: some View {
         Button(action: onAction) {
-            VStack(spacing: 10) {
-                // Icono Esférico de Reunión (Mismo tamaño que los iconos de App)
+            VStack(spacing: 8) {
                 ZStack {
-                    // Fondo degradado premium con el color de la plataforma
                     Circle()
                         .fill(
                             LinearGradient(
@@ -30,44 +28,40 @@ public struct MeetingItemView: View {
                                 startPoint: .topLeading, endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 58, height: 58)
-                        .shadow(color: platformColor.opacity(isHovered ? 0.45 : 0.25), 
-                                radius: isHovered ? 12 : 6, 
-                                y: isHovered ? 6 : 3)
+                        .frame(width: 48, height: 48)
+                        .shadow(color: platformColor.opacity(isHovered ? 0.4 : 0.22),
+                                radius: isHovered ? 10 : 5,
+                                y: isHovered ? 5 : 2.5)
                     
-                    // Reflejo de cristal en la parte superior del círculo
                     Circle()
-                        .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.22), lineWidth: 0.9)
                     
-                    // Simbolo de plataforma centrado y elegante
                     Image(systemName: meeting.platform.systemIconName)
-                        .font(.system(size: 24, weight: .heavy))
+                        .font(.system(size: 20, weight: .heavy))
                         .foregroundColor(.white)
                         .shadow(color: Color.black.opacity(0.2), radius: 2)
                 }
                 
-                // Título del Meeting
                 Text(meeting.name)
-                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
                     .lineLimit(1)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white)
-                    .shadow(color: Color.black.opacity(0.6), radius: 2, x: 0, y: 1)
+                    .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 1)
             }
-            .frame(width: 88, height: 94)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 6)
-            // Halo de brillo al pasar el ratón
+            .frame(width: 76, height: 82)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
             .background(
                 Circle()
-                    .fill(platformColor.opacity(isHovered ? 0.12 : 0))
-                    .frame(width: 84, height: 84)
-                    .blur(radius: 8)
-                    .scaleEffect(isHovered ? 1.15 : 0.9)
+                    .fill(platformColor.opacity(isHovered ? 0.1 : 0))
+                    .frame(width: 72, height: 72)
+                    .blur(radius: 6)
+                    .scaleEffect(isHovered ? 1.12 : 0.92)
                     .animation(.easeOut(duration: 0.2), value: isHovered)
             )
-            .scaleEffect(isHovered ? 1.08 : 1.0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.65), value: isHovered)
+            .scaleEffect(isHovered ? 1.06 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.68), value: isHovered)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
@@ -92,21 +86,5 @@ public struct MeetingItemView: View {
                 Label("Remove", systemImage: "trash")
             }
         }
-    }
-}
-
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default: (a, r, g, b) = (1, 1, 1, 0)
-        }
-        self.init(.sRGB, red: Double(r)/255, green: Double(g)/255, blue: Double(b)/255, opacity: Double(a)/255)
     }
 }

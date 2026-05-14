@@ -15,38 +15,39 @@ public struct AppItemView: View {
     
     public var body: some View {
         Button(action: action) {
-            VStack(spacing: 10) {
-                // Icono Gigante estilo Launchpad
+            VStack(spacing: 8) {
+                // Icono escalado 10px más pequeño (48x48) para un look más estilizado
                 AppIconLoader.getIcon(forPath: app.path)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 58, height: 58)
-                    .shadow(color: Color.black.opacity(isHovered ? 0.35 : 0.2), 
-                            radius: isHovered ? 12 : 6, 
-                            y: isHovered ? 6 : 3)
+                    .frame(width: 48, height: 48)
+                    .shadow(color: Color.black.opacity(isHovered ? 0.3 : 0.18), 
+                            radius: isHovered ? 10 : 5, 
+                            y: isHovered ? 5 : 2.5)
                 
-                // Texto Blanco Refinado con Sombra (Legible en fondos borrosos)
+                // Texto escalado y espaciado
                 Text(app.name)
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white)
-                    .shadow(color: Color.black.opacity(0.6), radius: 2, x: 0, y: 1)
+                    .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 1)
             }
-            .frame(width: 88, height: 94)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 6)
-            // Efecto de Brillo Circular traslúcido (Hover Halo) en lugar de tarjeta
+            // Contenedor escalado proporcionalmente (76x82)
+            .frame(width: 76, height: 82)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            // Halo de brillo sutilmente más pequeño y elegante
             .background(
                 Circle()
-                    .fill(Color.white.opacity(isHovered ? 0.1 : 0))
-                    .frame(width: 84, height: 84)
-                    .blur(radius: 6)
-                    .scaleEffect(isHovered ? 1.15 : 0.9)
+                    .fill(Color.white.opacity(isHovered ? 0.09 : 0))
+                    .frame(width: 72, height: 72)
+                    .blur(radius: 5)
+                    .scaleEffect(isHovered ? 1.12 : 0.92)
                     .animation(.easeOut(duration: 0.2), value: isHovered)
             )
-            .scaleEffect(isHovered ? 1.08 : 1.0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.65), value: isHovered)
+            .scaleEffect(isHovered ? 1.06 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.68), value: isHovered)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
