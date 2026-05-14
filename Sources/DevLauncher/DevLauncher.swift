@@ -43,11 +43,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupPopover() {
         let pop = NSPopover()
         pop.contentSize = NSSize(width: 750, height: 520)
-        // .semitransparent da el efecto liquid glass nativo de macOS con la flechita
-        pop.behavior = .transient     // Se cierra solo al hacer clic fuera
-        pop.animates = true           // Animación de apertura nativa de Apple
+        pop.behavior = .transient
+        pop.animates = true
         
-        // Material que da el efecto glass/vitral con la flecha incluida
+        // ── CORRECCIÓN FLECHA ──
+        // Aplicar apariencia oscura directamente al objeto NSPopover
+        // para que la flecha triangular herede el material dark glass y NO sea azul
+        pop.appearance = NSAppearance(named: .vibrantDark)
+        
         pop.contentViewController = PopoverHostingController(
             rootView: LauncherView(viewModel: viewModel)
         )

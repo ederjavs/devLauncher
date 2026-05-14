@@ -1,6 +1,7 @@
 import Foundation
+import CoreTransferable
 
-public struct AppItem: Identifiable, Codable, Hashable {
+public struct AppItem: Identifiable, Codable, Hashable, Transferable {
     public let id: UUID
     public var name: String
     public var bundleIdentifier: String?
@@ -14,4 +15,10 @@ public struct AppItem: Identifiable, Codable, Hashable {
         self.path = path
         self.categoryId = categoryId
     }
+    
+    // Protocolo Transferable: usa el UUID como payload para el drag & drop
+    public static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .data)
+    }
 }
+

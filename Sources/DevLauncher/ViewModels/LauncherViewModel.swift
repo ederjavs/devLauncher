@@ -65,6 +65,14 @@ public final class LauncherViewModel: ObservableObject {
         apps.removeAll { $0.id == app.id }
     }
     
+    /// Mueve una app a otra categoría (drag & drop entre grupos)
+    public func moveApp(_ app: AppItem, toCategoryId categoryId: UUID) {
+        guard let index = apps.firstIndex(where: { $0.id == app.id }) else { return }
+        // Solo hacer algo si realmente cambió de categoría
+        guard apps[index].categoryId != categoryId else { return }
+        apps[index].categoryId = categoryId
+    }
+    
     public func launchApp(_ app: AppItem) {
         let fileURL = URL(fileURLWithPath: app.path)
         let configuration = NSWorkspace.OpenConfiguration()
